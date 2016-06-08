@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   }
   while((dataFile.peek()!= EOF))
   {
-    if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
+    if((dataFile.peek() == '\n' ) || (dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
       dataFile.ignore(1);
     while((dataFile.peek()!= EOF) && ((dataFile.peek() != '\n') && (dataFile.peek() != '\r')))// reads until EOF or \n or \r
     {
@@ -90,4 +90,10 @@ int main(int argc, char* argv[])
 //******************************************************************************************************************************
   return 0;
 }// END OF MAIN
+
+
+double SigmoidFunction(double x)
+{
+    return 1.0 / (1.0 + Math.Exp(-x));
+}
 //==============================================================================================================================
