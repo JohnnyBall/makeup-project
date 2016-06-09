@@ -14,19 +14,33 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <string.h>
+#include <cstring>
+#include <cmath>
 using namespace std;
+
+struct Node
+{
+    int    input;   //This will 
+    double out; //Output value
+
+    int nc; //number of paths/connections belonging to *this
+};
+
+
+
+double SigmoidFunction(double x);
 
 //==============================================================================================================================
 int main(int argc, char* argv[])
 {
   ifstream     dataFile;
   string       tempString;
-
-  string       fileName = "NOENTRY";
-  int          numHiddenNodes = 0;
-  int          epoch = 0;
-  double       learningRate = 0.0;
+  string       fileName        = "NOENTRY";
+  double       learningRate    = 0.0;
+  int          numOfInputNodes = 0;
+  int          numHiddenNodes  = 0;
+  int          epoch           = 0;
+  int          tmpInt;
 
   cout<<"ARGC: "<<argc<<endl;
   if(argc < 9)
@@ -73,27 +87,43 @@ int main(int argc, char* argv[])
 
 //******************************************************************************************************************************
   dataFile.open(fileName);
+
   if(dataFile.fail())// checks to see if the file was able to be opened
   {
-    cout << "Failed To open file,your file name is: "<< fileName<<" :Restart Program and try again. ";
+    cout << "Failed To open file, your file name is: "<< fileName<<" :Restart Program and try again. ";
     exit(1);
   }
+
+  if((dataFile.peek()!= EOF))
+  {
+    numOfInputNodes = (dataFile.get() - 48);
+    cout << "numOfInputNodes"<< numOfInputNodes<<endl;
+  }
+  if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
+      dataFile.ignore(1);
+
   while((dataFile.peek()!= EOF))
   {
-    if((dataFile.peek() == '\n' ) || (dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
+      for(int i = 0; i < numOfInputNodes; i++)// will store theses somewhere
+      {
+         tmpInt = (dataFile.get() - 48);
+         cout<<tmpInt;    if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
       dataFile.ignore(1);
-    while((dataFile.peek()!= EOF) && ((dataFile.peek() != '\n') && (dataFile.peek() != '\r')))// reads until EOF or \n or \r
-    {
-    }
+      }
+      //*******************HERE IS WHERE THE REAL VALUE IS GRABED
+      tmpInt = (dataFile.get() - 48);
+      cout<<"\nTRUE VALUE:"<<tmpInt<<endl;
+      if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
+        dataFile.ignore(1);
   }
   dataFile.close();
 //******************************************************************************************************************************
   return 0;
 }// END OF MAIN
 
-
+//==============================================================================================================================
 double SigmoidFunction(double x)
 {
-    return 1.0 / (1.0 + Math.Exp(-x));
+    return 1.0 / (1.0 + exp(-x));
 }
 //==============================================================================================================================
