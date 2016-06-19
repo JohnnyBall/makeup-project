@@ -16,19 +16,26 @@
 #include <algorithm>
 #include <cstring>
 #include <cmath>
+#include <ctime>
 using namespace std;
 
-struct Node
-{
-    int    input;   //This will 
-    double out; //Output value
 
-    int nc; //number of paths/connections belonging to *this
+
+struct net
+{
+    vector<vector <double>> inputWeights; // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
+    vector<double> hiddenLayer;           // contains the calculated hidden layer values hiddenLayer[0] being biased
+    vector<double> hiddenWeights;         // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
+    double output;
 };
 
 
 
-double SigmoidFunction(double x);
+double sigmoidFunction(double x);
+void   printVector(vector<double> myVect, string msgTxt);
+double weightSumCalc(vector<vector<double>> inputWeights, vector<double> inputData);
+void   printVect2D(vector<vector <string>> &Vector);
+double fRand(double fMin, double fMax);
 
 //==============================================================================================================================
 int main(int argc, char* argv[])
@@ -37,10 +44,17 @@ int main(int argc, char* argv[])
   string       tempString;
   string       fileName        = "NOENTRY";
   double       learningRate    = 0.0;
+  double       classValue      = 0.0;
   int          numOfInputNodes = 0;
   int          numHiddenNodes  = 0;
   int          epoch           = 0;
   int          tmpInt;
+
+  vector<double> tempVector;
+
+  net binNet;
+
+  srand (time(NULL));
 
   cout<<"ARGC: "<<argc<<endl;
   if(argc < 9)
@@ -94,11 +108,52 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
-  if((dataFile.peek()!= EOF))
+  if((dataFile.peek()!= EOF))// READS IN THE FIRST NUMBER TO COUNT THE NUMBER OF INPUT NODES
   {
     numOfInputNodes = (dataFile.get() - 48);
     cout << "numOfInputNodes"<< numOfInputNodes<<endl;
   }
+
+
+//----------------------------------------------------------------------------------------------------------------------------------
+  //HERE THE NET IS INITIALIZED
+/*struct net
+{
+    vector<vector <double>> inputWeights; // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
+    vector<double> hiddenLayer;  // contains the calculated hidden layer values hiddenLayer[0] being biased
+    vector<double> hiddenWeights // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
+    double output;
+};
+*/
+// INITIALIZED THE RANDOMIZED INPUT WEIGHTS
+cout<<"INITIALIZED THE RANDOMIZED INPUT WEIGHTS"<<endl;
+binNet.inputWeights = vector<vector<double>>();
+
+for(int i = 0; i<numOfInputNodes;i++)
+{
+  tempVector = vector<double>();
+  for(int j = 0; j<numHiddenNodes;j++)
+  {
+    classValue = fRand(-1,1);
+    cout<<"random: "<< classValue<<endl;
+    tempVector.push_back(classValue);// pushes the new string onto the temporary vector.
+  }
+    binNet.inputWeights.push_back(tempVector);
+} 
+cout<<"DONE."<<endl;
+
+// INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS
+cout<<"INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS"<<endl;
+binNet.hiddenWeights = vector<double>();
+for(int j = 0; j<numHiddenNodes;j++)
+{
+  classValue = fRand(-1,1);
+  cout<<"random: "<< classValue<<endl;
+  binNet.hiddenWeights.push_back(classValue);
+}
+cout<<"DONE."<<endl;
+
+//----------------------------------------------------------------------------------------------------------------------------------
   if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
       dataFile.ignore(1);
 
@@ -107,8 +162,9 @@ int main(int argc, char* argv[])
       for(int i = 0; i < numOfInputNodes; i++)// will store theses somewhere
       {
          tmpInt = (dataFile.get() - 48);
-         cout<<tmpInt;    if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
-      dataFile.ignore(1);
+         cout<<tmpInt;    
+         if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
+            dataFile.ignore(1);
       }
       //*******************HERE IS WHERE THE REAL VALUE IS GRABED
       tmpInt = (dataFile.get() - 48);
@@ -122,8 +178,59 @@ int main(int argc, char* argv[])
 }// END OF MAIN
 
 //==============================================================================================================================
-double SigmoidFunction(double x)
+/*
+*inputWeights.at(i).at(j); i being the input iterator, j being the inner
+*
+*/
+double weightSumCalc(vector<vector<double>> inputWeights, vector<double> inputData, int itteration)
+{
+  double sum = 0.0;
+  cout<<" IN weightSumCalc: "<<endl;
+  cout<<"Begin=================================================================================="<<endl;
+  cout<<" itteration: "<<itteration<<endl;
+  for(unsigned int i = 0; i < inputData.size(); i++)
+  {
+    cout<<"inputData[i]:"<<inputData[i]<<"inputWeights.at(itteration).at(i)"<<inputWeights.at(itteration).at(i)<<endl;
+    sum = sum + (inputData[i]*(inputWeights.at(i).at(itteration)));
+    cout<<"sum"<<sum<<endl;
+  }
+  
+  cout<<"SUM:"<<sum<<endl;
+  cout<<"END=================================================================================="<<endl;
+  return sum;
+}
+
+//==============================================================================================================================
+double sigmoidFunction(double x)
 {
     return 1.0 / (1.0 + exp(-x));
 }
 //==============================================================================================================================
+void printVector(vector<double> myVect, string msgTxt)
+{
+  cout<<msgTxt<<endl;
+  for(unsigned int i = 0; i < myVect.size(); i++)
+  {
+    cout<<myVect[i]<<",";
+  }
+  cout<<endl;
+}
+//printVect FUNCTION////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void printVect2D(vector<vector <string>> &Vector)// Helper function for printing the vector of vectors of string in  an appropriate format
+{
+  cout<<" SIZE:" << Vector.size()<< " VECTOR:";
+  for(unsigned int i = 0; i < Vector.size(); i++)
+  {
+    for (std::vector<string>::iterator it = Vector.at(i).begin(); it != Vector.at(i).end(); ++it)
+      std::cout << *it;
+    cout<<" ";
+  }
+  cout << '\n';
+} // end of printVect
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper function for random doubles between a set amount 
+double fRand(double fMin, double fMax)
+{
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
+}
