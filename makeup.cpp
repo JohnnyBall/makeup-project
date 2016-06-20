@@ -17,6 +17,7 @@
 #include <cstring>
 #include <cmath>
 #include <ctime>
+#include <iomanip>
 using namespace std;
 
 
@@ -34,7 +35,7 @@ struct net
 double sigmoidFunction(double x);
 void   printVector(vector<double> myVect, string msgTxt);
 double weightSumCalc(vector<vector<double>> inputWeights, vector<double> inputData);
-void   printVect2D(vector<vector <string>> &Vector);
+void   printVect2D(vector<vector <double>> &Vector);
 double fRand(double fMin, double fMax);
 
 //==============================================================================================================================
@@ -51,6 +52,7 @@ int main(int argc, char* argv[])
   int          tmpInt;
 
   vector<double> tempVector;
+  vector<double> inputVector;
 
   net binNet;
 
@@ -135,12 +137,14 @@ for(int i = 0; i<numOfInputNodes;i++)
   for(int j = 0; j<numHiddenNodes;j++)
   {
     classValue = fRand(-1,1);
-    cout<<"random: "<< classValue<<endl;
+/*    cout<<"random: "<< classValue<<endl;*/
+    classValue = roundf(classValue * 100) / 100;
+    cout<<"random(ROUNDED): "<< classValue<<endl;
     tempVector.push_back(classValue);// pushes the new string onto the temporary vector.
   }
     binNet.inputWeights.push_back(tempVector);
 } 
-cout<<"DONE."<<endl;
+/*cout<<"DONE."<<endl;*/
 
 // INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS
 cout<<"INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS"<<endl;
@@ -148,27 +152,43 @@ binNet.hiddenWeights = vector<double>();
 for(int j = 0; j<numHiddenNodes;j++)
 {
   classValue = fRand(-1,1);
-  cout<<"random: "<< classValue<<endl;
+/*  cout<<"random: "<< classValue<<endl;*/
+  classValue = roundf(classValue * 100) / 100;
+/*  cout<<"random(ROUNDED): "<< classValue<<endl;*/
   binNet.hiddenWeights.push_back(classValue);
 }
-cout<<"DONE."<<endl;
-
+/*cout<<"DONE."<<endl;
+cout<<"\n";
+cout<<"\n";
+cout<< "printing vectors inputWeights  :\n";
+printVect2D(binNet.inputWeights);
+cout<<"done with inputWeights \n";
+cout<<"\n";
+printVector(binNet.hiddenWeights, "PRINTING HIDDEN WEIGHTS");
+cout<<"done with hiddenWeights \n";
+cout<<"\n";
+cout<<"\n";
+cout<<"\n";*/
 //----------------------------------------------------------------------------------------------------------------------------------
   if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
       dataFile.ignore(1);
 
   while((dataFile.peek()!= EOF))
   {
+      inputVector = vector<double>();
       for(int i = 0; i < numOfInputNodes; i++)// will store theses somewhere
       {
          tmpInt = (dataFile.get() - 48);
-         cout<<tmpInt;    
+         cout<<tmpInt;
+         inputVector.push_back((double)tmpInt);    
          if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
             dataFile.ignore(1);
       }
       //*******************HERE IS WHERE THE REAL VALUE IS GRABED
       tmpInt = (dataFile.get() - 48);
       cout<<"\nTRUE VALUE:"<<tmpInt<<endl;
+      classValue = (double)tmpInt;
+
       if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
         dataFile.ignore(1);
   }
@@ -215,22 +235,24 @@ void printVector(vector<double> myVect, string msgTxt)
   }
   cout<<endl;
 }
-//printVect FUNCTION////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void printVect2D(vector<vector <string>> &Vector)// Helper function for printing the vector of vectors of string in  an appropriate format
+//==============================================================================================================================
+  // Helper function for printing the vector of vectors of string in  an appropriate format
+void printVect2D(vector<vector <double>> &Vector)
 {
-  cout<<" SIZE:" << Vector.size()<< " VECTOR:";
+  cout<<" SIZE:" << Vector.size()<< " VECTOR:\n";
   for(unsigned int i = 0; i < Vector.size(); i++)
   {
-    for (std::vector<string>::iterator it = Vector.at(i).begin(); it != Vector.at(i).end(); ++it)
-      std::cout << *it;
-    cout<<" ";
+    for (std::vector<double>::iterator it = Vector.at(i).begin(); it != Vector.at(i).end(); ++it)
+      std::cout << *it<< " ";
+    cout<<"\n ";
   }
   cout << '\n';
 } // end of printVect
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//==============================================================================================================================
   // Helper function for random doubles between a set amount 
 double fRand(double fMin, double fMax)
 {
     double f = (double)rand() / RAND_MAX;
     return fMin + f * (fMax - fMin);
 }
+//==============================================================================================================================
