@@ -32,9 +32,10 @@ struct Net
 
 
 
-void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector);
+void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int iteration);
 double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration);
-double errorCalculation(double tmpDouble,double output);
+double weightSumCalcOut(vector<double> &inputWeights, vector<double> &inputData);
+double errorCalculation(double classValue,double output);
 double sigmoidFunction(double x);
 void   printVector(vector<double> &myVect, string msgTxt);
 void   printVect2D(vector<vector <double>> &Vector);
@@ -186,16 +187,17 @@ for(int j = 0; j < numHiddenNodes; j++)
       printVector(tempVector,"TRAINING ON VECTOR: ");
       //for(unsigned int j = 0; j < tempVector.size(); j++)
       //{
-          training(binNet,tempVector,classVector);
+          training(binNet,tempVector,classVector,classVector.size()-1);
       //}
     //}
   }
   return 0;
 }// END OF MAIN
 //==============================================================================================================================
-void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector)
+void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int iteration)
 {
   double tmpDbl;
+///LAYER 1
   cout<<"trainingNet.hiddenLayer.size(): "<<trainingNet.hiddenLayer.size()<<endl;
   for(unsigned int i = 0; i < trainingNet.hiddenLayer.size(); i++)
   {
@@ -205,6 +207,30 @@ void training(Net &trainingNet, vector<double> &inputVector, vector<double> &cla
     cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
     trainingNet.hiddenLayer.at(i) = tmpDbl;
   }
+////////////LAYER 2
+  printVector(trainingNet.hiddenLayer,"trainingNet.hiddenLayer:");
+  tmpDbl = weightSumCalcOut(trainingNet.hiddenWeights, trainingNet.hiddenLayer);
+  cout<<"\n weightSumCalc:"<<tmpDbl<<endl;
+  tmpDbl = sigmoidFunction(tmpDbl);
+  cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
+  trainingNet.output = tmpDbl;
+//ERROR CALC
+  cout<<"errorCalculation: "<<errorCalculation(classVector[iteration],trainingNet.output)<<endl;
+}
+//==============================================================================================================================
+/*
+*inputWeights.at(i).at(j); i being the input iterator, j being the inner iteration
+*
+*/
+double weightSumCalcOut(vector<double> &hiddenWeights,vector<double> &hiddenLayer)
+{
+  double sum = 0.0;
+  for(unsigned int i = 0; i < hiddenWeights.size(); i++)
+  {
+    //cout<<"hiddenWeights.at(i): "<<hiddenWeights.at(i)<<" hiddenLayer.at(i): "<<hiddenLayer.at(i)<<endl;
+    sum = sum + (hiddenWeights.at(i)*hiddenLayer.at(i));
+  }
+  return sum;
 }
 //==============================================================================================================================
 /*
@@ -222,16 +248,16 @@ double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &input
   for(unsigned int i = 0; i < inputData.size(); i++)
   {
    // cout<<"inputData[i]: "<<inputData[i]<<"inputWeights.at(i).at(iteration): "<<inputWeights.at(i).at(iteration)<<endl;
-    sum = sum + (inputData[i]*(inputWeights.at(i).at(iteration)));
+    sum = sum + (inputData.at(i)*(inputWeights.at(i).at(iteration)));
     //cout<<"sum"<<sum<<endl;
   }
   //cout<<"SUM: "<<sum<<endl;
   return sum;
 }
 //==============================================================================================================================
-double errorCalculation(double tmpDouble,double output)
+double errorCalculation(double classValue ,double output)
 {
-    return (output*(1 - output)*(tmpDouble - output));
+    return (output*(1 - output)*(classValue - output));
 }
 //==============================================================================================================================
 double sigmoidFunction(double x)
