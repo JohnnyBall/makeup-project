@@ -22,7 +22,7 @@ using namespace std;
 
 
 
-struct net
+struct Net
 {
     vector<vector <double>> inputWeights; // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
     vector<double> hiddenLayer;           // contains the calculated hidden layer values hiddenLayer[0] being biased
@@ -32,29 +32,33 @@ struct net
 
 
 
+void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector);
+double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration);
+double errorCalculation(double tmpDouble,double output);
 double sigmoidFunction(double x);
-void   printVector(vector<double> myVect, string msgTxt);
-double weightSumCalc(vector<vector<double>> inputWeights, vector<double> inputData);
+void   printVector(vector<double> &myVect, string msgTxt);
 void   printVect2D(vector<vector <double>> &Vector);
 double fRand(double fMin, double fMax);
 
 //==============================================================================================================================
 int main(int argc, char* argv[])
 {
-  ifstream     dataFile;
-  string       tempString;
-  string       fileName        = "NOENTRY";
-  double       learningRate    = 0.0;
-  double       classValue      = 0.0;
-  int          numOfInputNodes = 0;
-  int          numHiddenNodes  = 0;
-  int          epoch           = 0;
-  int          tmpInt;
+  ifstream               dataFile;
+  string                 tempString;
+  string                 fileName        = "NOENTRY";
+  double                 learningRate    = 0.0;
+  double                 tmpDouble      = 0.0;
+  int                    numOfInputNodes = 0;
+  int                    numHiddenNodes  = 0;
+  int                    epoch           = 0;
+  int                    tmpInt;
 
-  vector<double> tempVector;
-  vector<double> inputVector;
+  vector<double>         tempVector;
+  vector<vector<double>> inputVector;
+  vector<double>         classVector;
 
-  net binNet;
+
+  Net binNet;
 
   srand (time(NULL));
 
@@ -113,122 +117,132 @@ int main(int argc, char* argv[])
   if((dataFile.peek()!= EOF))// READS IN THE FIRST NUMBER TO COUNT THE NUMBER OF INPUT NODES
   {
     numOfInputNodes = (dataFile.get() - 48);
-    cout << "numOfInputNodes"<< numOfInputNodes<<endl;
+    //cout << "numOfInputNodes"<< numOfInputNodes<<endl;
   }
 
 
 //----------------------------------------------------------------------------------------------------------------------------------
-  //HERE THE NET IS INITIALIZED
-/*struct net
-{
-    vector<vector <double>> inputWeights; // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
-    vector<double> hiddenLayer;  // contains the calculated hidden layer values hiddenLayer[0] being biased
-    vector<double> hiddenWeights // contains the input weights, these will be random values (with a precision of two decimal digits) between −1 and +1
-    double output;
-};
-*/
-// INITIALIZED THE RANDOMIZED INPUT WEIGHTS
-cout<<"INITIALIZED THE RANDOMIZED INPUT WEIGHTS"<<endl;
+//HERE THE NET IS INITIALIZED
+  // INITIALIZED THE RANDOMIZED INPUT WEIGHTS
 binNet.inputWeights = vector<vector<double>>();
 
-for(int i = 0; i<numOfInputNodes;i++)
+for(int i = 0; i < numOfInputNodes; i++)
 {
   tempVector = vector<double>();
-  for(int j = 0; j<numHiddenNodes;j++)
+  for(int j = 0; j < numHiddenNodes; j++)
   {
-    classValue = fRand(-1,1);
-/*    cout<<"random: "<< classValue<<endl;*/
-    classValue = roundf(classValue * 100) / 100;
-    cout<<"random(ROUNDED): "<< classValue<<endl;
-    tempVector.push_back(classValue);// pushes the new string onto the temporary vector.
+    tmpDouble = fRand(-1,1);
+    tmpDouble = roundf(tmpDouble * 100) / 100; // rounds the precision to 2 decimals digits
+    //cout<<"random(ROUNDED): "<< tmpDouble<<endl;
+    tempVector.push_back(tmpDouble); // pushes the new string onto the temporary vector.
   }
     binNet.inputWeights.push_back(tempVector);
 } 
-/*cout<<"DONE."<<endl;*/
-
 // INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS
-cout<<"INITIALIZED THE RANDOMIZED HIDDEN NODE WEIGHTS"<<endl;
 binNet.hiddenWeights = vector<double>();
-for(int j = 0; j<numHiddenNodes;j++)
+for(int j = 0; j < numHiddenNodes; j++)
 {
-  classValue = fRand(-1,1);
-/*  cout<<"random: "<< classValue<<endl;*/
-  classValue = roundf(classValue * 100) / 100;
-/*  cout<<"random(ROUNDED): "<< classValue<<endl;*/
-  binNet.hiddenWeights.push_back(classValue);
+  tmpDouble = fRand(-1,1);
+  tmpDouble = roundf(tmpDouble * 100) / 100;
+  binNet.hiddenWeights.push_back(tmpDouble);
+  binNet.hiddenLayer.push_back(0.0);// initialized all the spots in the temp hidden layer to 0.0
 }
-/*cout<<"DONE."<<endl;
-cout<<"\n";
-cout<<"\n";
-cout<< "printing vectors inputWeights  :\n";
-printVect2D(binNet.inputWeights);
-cout<<"done with inputWeights \n";
-cout<<"\n";
-printVector(binNet.hiddenWeights, "PRINTING HIDDEN WEIGHTS");
-cout<<"done with hiddenWeights \n";
-cout<<"\n";
-cout<<"\n";
-cout<<"\n";*/
 //----------------------------------------------------------------------------------------------------------------------------------
+  // Here is where I read in the data from the file.
   if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
       dataFile.ignore(1);
 
   while((dataFile.peek()!= EOF))
   {
-      inputVector = vector<double>();
+      tempVector = vector<double>();
       for(int i = 0; i < numOfInputNodes; i++)// will store theses somewhere
       {
          tmpInt = (dataFile.get() - 48);
-         cout<<tmpInt;
-         inputVector.push_back((double)tmpInt);    
+         //cout<<tmpInt;
+         tempVector.push_back((double)tmpInt);    
          if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
             dataFile.ignore(1);
       }
       //*******************HERE IS WHERE THE REAL VALUE IS GRABED
+      inputVector.push_back(tempVector);
       tmpInt = (dataFile.get() - 48);
-      cout<<"\nTRUE VALUE:"<<tmpInt<<endl;
-      classValue = (double)tmpInt;
-
+      //cout<<"\nTRUE VALUE:"<<tmpInt<<endl;
+      classVector.push_back((double)tmpInt);
       if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
         dataFile.ignore(1);
   }
   dataFile.close();
-//******************************************************************************************************************************
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------
+  //
+  //TRAINING STARTS HERE
+  //
+  for(int i = 0; i < epoch; i++)// will run the until the # of epoch's for training the  is network
+  {
+    //for(unsigned int y = 0; y < inputVector.size();y++)
+    //{
+      //tempVector = inputVector.at(y);
+      printVector(tempVector,"TRAINING ON VECTOR: ");
+      //for(unsigned int j = 0; j < tempVector.size(); j++)
+      //{
+          training(binNet,tempVector,classVector);
+      //}
+    //}
+  }
   return 0;
 }// END OF MAIN
-
+//==============================================================================================================================
+void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector)
+{
+  double tmpDbl;
+  cout<<"trainingNet.hiddenLayer.size(): "<<trainingNet.hiddenLayer.size()<<endl;
+  for(unsigned int i = 0; i < trainingNet.hiddenLayer.size(); i++)
+  {
+    tmpDbl = weightSumCalc(trainingNet.inputWeights, inputVector, i);
+    cout<<"\n weightSumCalc:"<<tmpDbl<<endl;
+    tmpDbl = sigmoidFunction(tmpDbl);
+    cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
+    trainingNet.hiddenLayer.at(i) = tmpDbl;
+  }
+}
 //==============================================================================================================================
 /*
-*inputWeights.at(i).at(j); i being the input iterator, j being the inner
+*inputWeights.at(i).at(j); i being the input iterator, j being the inner iteration
 *
 */
-double weightSumCalc(vector<vector<double>> inputWeights, vector<double> inputData, int itteration)
+double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration)
 {
   double sum = 0.0;
-  cout<<" IN weightSumCalc: "<<endl;
-  cout<<"Begin=================================================================================="<<endl;
-  cout<<" itteration: "<<itteration<<endl;
+  //cout<<" iteration: "<<iteration<<endl;
+  //cout<<" inputWeights: "<<endl;
+  //printVect2D(inputWeights);
+  //cout<<endl;
+  //printVector(inputData,"inputData:");
   for(unsigned int i = 0; i < inputData.size(); i++)
   {
-    cout<<"inputData[i]:"<<inputData[i]<<"inputWeights.at(itteration).at(i)"<<inputWeights.at(itteration).at(i)<<endl;
-    sum = sum + (inputData[i]*(inputWeights.at(i).at(itteration)));
-    cout<<"sum"<<sum<<endl;
+   // cout<<"inputData[i]: "<<inputData[i]<<"inputWeights.at(i).at(iteration): "<<inputWeights.at(i).at(iteration)<<endl;
+    sum = sum + (inputData[i]*(inputWeights.at(i).at(iteration)));
+    //cout<<"sum"<<sum<<endl;
   }
-  
-  cout<<"SUM:"<<sum<<endl;
-  cout<<"END=================================================================================="<<endl;
+  //cout<<"SUM: "<<sum<<endl;
   return sum;
 }
-
+//==============================================================================================================================
+double errorCalculation(double tmpDouble,double output)
+{
+    return (output*(1 - output)*(tmpDouble - output));
+}
 //==============================================================================================================================
 double sigmoidFunction(double x)
 {
     return 1.0 / (1.0 + exp(-x));
 }
 //==============================================================================================================================
-void printVector(vector<double> myVect, string msgTxt)
+void printVector(vector<double> &myVect, string msgTxt)
 {
   cout<<msgTxt<<endl;
+  cout<<" SIZE:" << myVect.size()<< " VECTOR: ";
   for(unsigned int i = 0; i < myVect.size(); i++)
   {
     cout<<myVect[i]<<",";
@@ -239,7 +253,7 @@ void printVector(vector<double> myVect, string msgTxt)
   // Helper function for printing the vector of vectors of string in  an appropriate format
 void printVect2D(vector<vector <double>> &Vector)
 {
-  cout<<" SIZE:" << Vector.size()<< " VECTOR:\n";
+  cout<<" SIZE:" << Vector.size()<< " VECTOR:\n ";
   for(unsigned int i = 0; i < Vector.size(); i++)
   {
     for (std::vector<double>::iterator it = Vector.at(i).begin(); it != Vector.at(i).end(); ++it)
