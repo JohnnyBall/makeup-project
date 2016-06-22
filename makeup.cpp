@@ -32,13 +32,15 @@ struct Net
 
 
 
-void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int iteration);
+void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int& iteration,double& learningRate);
 double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration);
 double weightSumCalcOut(vector<double> &inputWeights, vector<double> &inputData);
-double errorCalculation(double classValue,double output);
+double errorOutputCalculation(double classValue,double output);
+double errorHiddenCalculation(double classValue ,double output,double outputError,double weightedOutput);
 double sigmoidFunction(double x);
 void   printVector(vector<double> &myVect, string msgTxt);
 void   printVect2D(vector<vector <double>> &Vector);
+
 double fRand(double fMin, double fMax);
 
 //==============================================================================================================================
@@ -118,7 +120,6 @@ int main(int argc, char* argv[])
   if((dataFile.peek()!= EOF))// READS IN THE FIRST NUMBER TO COUNT THE NUMBER OF INPUT NODES
   {
     numOfInputNodes = (dataFile.get() - 48);
-    //cout << "numOfInputNodes"<< numOfInputNodes<<endl;
   }
 
 
@@ -134,7 +135,6 @@ for(int i = 0; i < numOfInputNodes; i++)
   {
     tmpDouble = fRand(-1,1);
     tmpDouble = roundf(tmpDouble * 100) / 100; // rounds the precision to 2 decimals digits
-    //cout<<"random(ROUNDED): "<< tmpDouble<<endl;
     tempVector.push_back(tmpDouble); // pushes the new string onto the temporary vector.
   }
     binNet.inputWeights.push_back(tempVector);
@@ -159,7 +159,6 @@ for(int j = 0; j < numHiddenNodes; j++)
       for(int i = 0; i < numOfInputNodes; i++)// will store theses somewhere
       {
          tmpInt = (dataFile.get() - 48);
-         //cout<<tmpInt;
          tempVector.push_back((double)tmpInt);    
          if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
             dataFile.ignore(1);
@@ -167,7 +166,6 @@ for(int j = 0; j < numHiddenNodes; j++)
       //*******************HERE IS WHERE THE REAL VALUE IS GRABED
       inputVector.push_back(tempVector);
       tmpInt = (dataFile.get() - 48);
-      //cout<<"\nTRUE VALUE:"<<tmpInt<<endl;
       classVector.push_back((double)tmpInt);
       if((dataFile.peek() == '\n' || dataFile.peek() == '\r'))// checks for newlines and stuff and ignores them
         dataFile.ignore(1);
@@ -187,15 +185,18 @@ for(int j = 0; j < numHiddenNodes; j++)
       printVector(tempVector,"TRAINING ON VECTOR: ");
       //for(unsigned int j = 0; j < tempVector.size(); j++)
       //{
-          training(binNet,tempVector,classVector,classVector.size()-1);
+          training(binNet,tempVector,classVector,classVector.size()-1,learningRate);
+          //training(binNet,tempVector,classVector,j,learningRate);
       //}
     //}
   }
   return 0;
 }// END OF MAIN
 //==============================================================================================================================
-void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int iteration)
+void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int &iteration,double &learningRate)
 {
+  double tmpDbl;
+  double outputError;
   double tmpDbl;
 ///LAYER 1
   cout<<"trainingNet.hiddenLayer.size(): "<<trainingNet.hiddenLayer.size()<<endl;
@@ -215,47 +216,49 @@ void training(Net &trainingNet, vector<double> &inputVector, vector<double> &cla
   cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
   trainingNet.output = tmpDbl;
 //ERROR CALC
-  cout<<"errorCalculation: "<<errorCalculation(classVector[iteration],trainingNet.output)<<endl;
+  outputError = errorOutputCalculation(classVector[iteration],trainingNet.output);
+  cout<<"errorCalculation: "<<outputError<<endl;
 }
 //==============================================================================================================================
-/*
-*inputWeights.at(i).at(j); i being the input iterator, j being the inner iteration
-*
-*/
+
+double backPropogate(vector<double> &hiddenWeights,vector<double> &hiddenLayer)
+{
+  double sum = 0.0;
+  for(unsigned int i = 0; i < hiddenWeights.size(); i++)
+  {
+    sum = sum + (hiddenWeights.at(i)*hiddenLayer.at(i));
+  }
+  return sum;
+}
+
+//==============================================================================================================================
 double weightSumCalcOut(vector<double> &hiddenWeights,vector<double> &hiddenLayer)
 {
   double sum = 0.0;
   for(unsigned int i = 0; i < hiddenWeights.size(); i++)
   {
-    //cout<<"hiddenWeights.at(i): "<<hiddenWeights.at(i)<<" hiddenLayer.at(i): "<<hiddenLayer.at(i)<<endl;
     sum = sum + (hiddenWeights.at(i)*hiddenLayer.at(i));
   }
   return sum;
 }
 //==============================================================================================================================
-/*
-*inputWeights.at(i).at(j); i being the input iterator, j being the inner iteration
-*
-*/
+
 double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration)
 {
   double sum = 0.0;
-  //cout<<" iteration: "<<iteration<<endl;
-  //cout<<" inputWeights: "<<endl;
-  //printVect2D(inputWeights);
-  //cout<<endl;
-  //printVector(inputData,"inputData:");
   for(unsigned int i = 0; i < inputData.size(); i++)
   {
-   // cout<<"inputData[i]: "<<inputData[i]<<"inputWeights.at(i).at(iteration): "<<inputWeights.at(i).at(iteration)<<endl;
     sum = sum + (inputData.at(i)*(inputWeights.at(i).at(iteration)));
-    //cout<<"sum"<<sum<<endl;
   }
-  //cout<<"SUM: "<<sum<<endl;
   return sum;
 }
 //==============================================================================================================================
-double errorCalculation(double classValue ,double output)
+double errorHiddenCalculation(double classValue ,double output,double outputError,double weightedOutput)
+{
+    return (output*(1 - output)*(outputError * weightedOutput));
+}
+//==============================================================================================================================
+double errorOutputCalculation(double classValue ,double output)
 {
     return (output*(1 - output)*(classValue - output));
 }
