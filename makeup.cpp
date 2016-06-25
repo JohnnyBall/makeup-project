@@ -33,10 +33,11 @@ struct Net
 
 
 void   training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int& iteration,double& learningRate);
+bool   test(Net &trainingNet, vector<double> &inputVector);
 double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &inputData, int iteration);
 double weightSumCalcOut(vector<double> &inputWeights, vector<double> &inputData);
 double errorOutputCalculation(double classValue,double output);
-double errorHiddenCalculation(double classValue ,double output,double outputError,double weightedOutput);
+double errorHiddenCalculation(double output,double outputError,double weightedOutput);
 double sigmoidFunction(double x);
 void   printVector(vector<double> &myVect, string msgTxt);
 void   printVect2D(vector<vector <double>> &Vector);
@@ -50,10 +51,11 @@ int main(int argc, char* argv[])
   string                 tempString;
   string                 fileName        = "NOENTRY";
   double                 learningRate    = 0.0;
-  double                 tmpDouble      = 0.0;
+  double                 tmpDouble       = 0.0;
   int                    numOfInputNodes = 0;
   int                    numHiddenNodes  = 0;
   int                    epoch           = 0;
+  int                    count           = 0;
   int                    tmpInt;
 
   vector<double>         tempVector;
@@ -177,60 +179,99 @@ for(int j = 0; j < numHiddenNodes; j++)
   //
   //TRAINING STARTS HERE
   //
-  for(int i = 0; i < epoch; i++)// will run the until the # of epoch's for training the  is network
+  for( int i = 0; i < epoch; i++)// will run the until the # of epoch's for training the  is network
   {
-    //for(unsigned int y = 0; y < inputVector.size();y++)
-    //{
-      //tempVector = inputVector.at(y);
+    for( int y = 0; y < inputVector.size();y++)
+    {
+      tempVector = inputVector.at(y);
       printVector(tempVector,"TRAINING ON VECTOR: ");
-      //for(unsigned int j = 0; j < tempVector.size(); j++)
-      //{
-          training(binNet,tempVector,classVector,classVector.size()-1,learningRate);
-          //training(binNet,tempVector,classVector,j,learningRate);
-      //}
-    //}
+      training(binNet,tempVector,classVector,y,learningRate);
+    }
   }
+  // END OF TRAINING
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------
+// TESTING SECTION
+    for(unsigned int y = 0; y < inputVector.size();y++)
+    {
+      tempVector = inputVector.at(y);
+      printVector(tempVector,"");
+      cout<<"  ";
+      if(test(binNet,tempVector) == (bool)classVector[y])
+      {
+        cout<<"("<<(bool)classVector[y]<<")"<<endl;
+        cout<< "count increases!"<<endl;
+        count++;
+      }
+      else
+      {
+        cout<<"("<<(bool)classVector[y]<<")"<<endl;
+      }
+    }
+    cout<<"Accuracy: "<<((double)count/inputVector.size())<<endl;
+// TESTING SECTION END
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------  
   return 0;
 }// END OF MAIN
+bool test(Net &trainingNet, vector<double> &inputVector)
+{
+  double tmpDbl;
+///LAYER 1 ( INPUT TO HIDDEN CALCLATION)
+  for(unsigned int i = 0; i < trainingNet.hiddenLayer.size(); i++)
+  {
+    tmpDbl = weightSumCalc(trainingNet.inputWeights, inputVector, i);
+    tmpDbl = sigmoidFunction(tmpDbl);
+    trainingNet.hiddenLayer.at(i) = tmpDbl;
+  }
+////////////LAYER 2( HIDDEN TO OUTPUT CALCLATION)
+  tmpDbl = weightSumCalcOut(trainingNet.hiddenWeights, trainingNet.hiddenLayer);
+  tmpDbl = sigmoidFunction(tmpDbl);
+  trainingNet.output = tmpDbl;
+
+  if(tmpDbl < 0.49)
+  {
+    cout<<"[0]  ";
+    return false;
+  }
+  else
+  {
+    cout<<"[1]  ";
+    return true;
+  }
+}
+//==============================================================================================================================
 //==============================================================================================================================
 void training(Net &trainingNet, vector<double> &inputVector, vector<double> &classVector, int &iteration,double &learningRate)
 {
   double tmpDbl;
   double outputError;
-  double tmpDbl;
-///LAYER 1
-  cout<<"trainingNet.hiddenLayer.size(): "<<trainingNet.hiddenLayer.size()<<endl;
+  double hiddenError;
+///LAYER 1 ( INPUT TO HIDDEN CALCLATION)
   for(unsigned int i = 0; i < trainingNet.hiddenLayer.size(); i++)
   {
     tmpDbl = weightSumCalc(trainingNet.inputWeights, inputVector, i);
-    cout<<"\n weightSumCalc:"<<tmpDbl<<endl;
     tmpDbl = sigmoidFunction(tmpDbl);
-    cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
     trainingNet.hiddenLayer.at(i) = tmpDbl;
   }
-////////////LAYER 2
-  printVector(trainingNet.hiddenLayer,"trainingNet.hiddenLayer:");
+////////////LAYER 2( HIDDEN TO OUTPUT CALCLATION)
   tmpDbl = weightSumCalcOut(trainingNet.hiddenWeights, trainingNet.hiddenLayer);
-  cout<<"\n weightSumCalc:"<<tmpDbl<<endl;
   tmpDbl = sigmoidFunction(tmpDbl);
-  cout<<"\n sigmoidFunction:"<<tmpDbl<<endl;
   trainingNet.output = tmpDbl;
 //ERROR CALC
   outputError = errorOutputCalculation(classVector[iteration],trainingNet.output);
-  cout<<"errorCalculation: "<<outputError<<endl;
-}
-//==============================================================================================================================
-
-double backPropogate(vector<double> &hiddenWeights,vector<double> &hiddenLayer)
-{
-  double sum = 0.0;
-  for(unsigned int i = 0; i < hiddenWeights.size(); i++)
+  for(unsigned int i = 0; i < trainingNet.hiddenWeights.size(); i++)
   {
-    sum = sum + (hiddenWeights.at(i)*hiddenLayer.at(i));
+    hiddenError = errorHiddenCalculation(trainingNet.hiddenLayer.at(i),outputError,trainingNet.hiddenWeights.at(i));
+    trainingNet.hiddenWeights.at(i) = (trainingNet.hiddenWeights.at(i)+(learningRate*outputError*trainingNet.hiddenLayer.at(i)));////////////OUTPUT TO HIDDEN WEIGHT CALCLATION)
+    for(unsigned int j = 0; j < inputVector.size(); j++)
+    {
+      trainingNet.inputWeights.at(j).at(i) = (trainingNet.inputWeights.at(j).at(i)+(learningRate*hiddenError*inputVector.at(j)));////////////HIDDEN TO INPUT WEIGHT CALCLATION)
+    }
   }
-  return sum;
 }
-
 //==============================================================================================================================
 double weightSumCalcOut(vector<double> &hiddenWeights,vector<double> &hiddenLayer)
 {
@@ -253,7 +294,7 @@ double weightSumCalc(vector<vector<double>> &inputWeights, vector<double> &input
   return sum;
 }
 //==============================================================================================================================
-double errorHiddenCalculation(double classValue ,double output,double outputError,double weightedOutput)
+double errorHiddenCalculation(double output,double outputError,double weightedOutput)
 {
     return (output*(1 - output)*(outputError * weightedOutput));
 }
@@ -271,12 +312,11 @@ double sigmoidFunction(double x)
 void printVector(vector<double> &myVect, string msgTxt)
 {
   cout<<msgTxt<<endl;
-  cout<<" SIZE:" << myVect.size()<< " VECTOR: ";
   for(unsigned int i = 0; i < myVect.size(); i++)
   {
     cout<<myVect[i]<<",";
   }
-  cout<<endl;
+  cout<<":";
 }
 //==============================================================================================================================
   // Helper function for printing the vector of vectors of string in  an appropriate format
